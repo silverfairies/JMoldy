@@ -3,6 +3,7 @@ package an.argentum.jmoldy;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.LinkedHashSet;
 
 class Project {
@@ -17,6 +18,11 @@ class Project {
     private File[] sourcePackages;
     private File[] sourceFiles;
     private File[] externalLibraries;
+    private Path srcDirectory;
+    private Path libDirectory;
+    private Path outDirectory;
+    private Path jarDirectory;
+
 
     public Project ( String name ) {
         this.name = name;
@@ -27,10 +33,16 @@ class Project {
     public Project ( Path path ) {
         this.path = path;
         this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
-        this.packages = new ArrayList<>();
-        this.sourcePackages = generateSourcePackages();
-        this.externalLibraries = generateExternalLibraries();
-        this.sourceFiles = generateSourceFiles();
+        // this.packages = new ArrayList<>();
+
+        this.srcDirectory = new File("src").toPath();
+        this.libDirectory = new File("lib").toPath();
+        this.outDirectory = new File("out").toPath();
+        this.jarDirectory = new File("jar").toPath();
+
+        this.sourcePackages = getSourcePackages();
+        this.externalLibraries = getExternalLibraries();
+        this.sourceFiles = getSourceFiles();
         System.out.println(name + " loaded.");
     }
 
@@ -58,31 +70,15 @@ class Project {
         return this.jarName;
     }
 
+
+
     public File[] getSourcePackages () {
         return getSourcePackages ( true );
     }
 
     public File[] getSourcePackages ( boolean generate ) {
-        if ( generate ) this.sourcePackages = generateSourcePackages();
+        if ( generate ) this.sourcePackages = generateFileArray( srcDirectory, ".java", true);
         return this.sourcePackages;
-    } 
-
-    private File[] generateSourcePackages () {
-        LinkedHashSet<File> packageHashSet = generateSourcePackages(this.path.resolve("src").toFile());
-        File[] packagesArray = new File[packageHashSet.size()];
-        return packageHashSet.toArray(packagesArray);
-    }
-
-    private LinkedHashSet<File> generateSourcePackages ( File path ) {
-        File[] files = path.listFiles();
-        LinkedHashSet<File> packageHashSet = new LinkedHashSet<>();
-        for ( File each : files ) {
-            if ( each.isDirectory() ) {
-                for ( File file : generateSourcePackages( each ) ) packageHashSet.add(file);
-            }
-            else if ( each.getName().endsWith(".java") ) packageHashSet.add(each.getParentFile());
-        }
-        return packageHashSet;
     }
 
     public File[] getSourceFiles () {
@@ -90,26 +86,8 @@ class Project {
     }
 
     public File[] getSourceFiles ( boolean generate ) {
-        if ( generate ) this.sourceFiles = generateSourceFiles();
+        if ( generate ) this.sourceFiles = generateFileArray( srcDirectory, ".java", false);
         return this.sourceFiles;
-    }
-
-    private File[] generateSourceFiles () {
-        LinkedHashSet<File> packageHashSet = generateSourceFiles(this.path.resolve("src").toFile());
-        File[] packagesArray = new File[packageHashSet.size()];
-        return packageHashSet.toArray(packagesArray);
-    }
-
-    private LinkedHashSet<File> generateSourceFiles ( File path ) {
-        File[] files = path.listFiles();
-        LinkedHashSet<File> packageHashSet = new LinkedHashSet<>();
-        for ( File each : files ) {
-            if ( each.isDirectory() ) {
-                for ( File file : generateSourceFiles( each ) ) packageHashSet.add(file);
-            }
-            else if ( each.getName().endsWith(".java") ) packageHashSet.add(each);
-        }
-        return packageHashSet;
     }
 
     public File[] getExternalLibraries () {
@@ -117,25 +95,87 @@ class Project {
     }
 
     public File[] getExternalLibraries ( boolean generate ) {
-        if ( generate ) this.externalLibraries = generateExternalLibraries();
+        if ( generate ) this.externalLibraries = generateFileArray(libDirectory, ".jar", false);
         return this.externalLibraries;
     }
 
-    private File[] generateExternalLibraries () {
-        LinkedHashSet<File> packageHashSet = generateExternalLibraries(this.path.resolve("lib").toFile());
-        File[] packagesArray = new File[packageHashSet.size()];
-        return packageHashSet.toArray(packagesArray);
+    private File[] generateFileArray ( Path directory, String suffix, boolean directoriesOnly ) {
+        LinkedHashSet<File> fileHashSet = generateFileArrayStep(this.path.resolve(directory).toFile(), suffix, directoriesOnly);
+        File[] fileArray = new File[fileHashSet.size()];
+        return fileHashSet.toArray(fileArray);
     }
 
-    private LinkedHashSet<File> generateExternalLibraries ( File path ) {
+    private LinkedHashSet<File> generateFileArrayStep ( File path, String suffix, boolean directoriesOnly ) {
         File[] files = path.listFiles();
-        LinkedHashSet<File> packageHashSet = new LinkedHashSet<>();
+        LinkedHashSet<File> fileHashSet = new LinkedHashSet<>();
         for ( File each : files ) {
             if ( each.isDirectory() ) {
-                for ( File file : generateExternalLibraries( each ) ) packageHashSet.add(file);
+                for ( File file : generateFileArrayStep(each, suffix, directoriesOnly) ) fileHashSet.add(file);
             }
-            else if ( each.getName().endsWith(".jar") ) packageHashSet.add(each);
+            else if ( each.getName().endsWith(suffix) ) {
+                if ( directoriesOnly ) fileHashSet.add(each.getParentFile()); else fileHashSet.add(each);
+            }
         }
-        return packageHashSet;
+        return fileHashSet;
+    }
+
+
+
+    public void setPaths ( String directory, String path ) {
+        switch (directory) {
+            case "src":
+                this.srcDirectory = new File(path).toPath();
+                break;
+
+            case "lib":
+                this.libDirectory = new File(path).toPath();
+                break;
+        
+            case "out":
+                this.outDirectory = new File(path).toPath();
+                break;
+        
+            case "jar":
+                this.jarDirectory = new File(path).toPath();
+                break;
+        
+            default:
+                throw new InputMismatchException(directory + " not a parameter");
+        }
+    }
+
+    public Path getOutDirectory () {
+        return this.outDirectory;
+    }
+
+    public Path getSrcDirectory () {
+        return this.srcDirectory;
+    }
+
+    public Path getJarDirectory () {
+        return this.jarDirectory;
+    }
+
+    public Path getLibDirectory () {
+        return this.libDirectory;
+    }
+
+    public Path getDirectory ( String directory ) {
+        switch (directory) {
+            case "src":
+                return this.getSrcDirectory();
+
+            case "lib":
+                return this.getLibDirectory();
+        
+            case "out":
+                return this.getOutDirectory();
+        
+            case "jar":
+                return this.getJarDirectory();
+
+            default:
+                throw new InputMismatchException(directory + " not a parameter");
+        }
     }
 }

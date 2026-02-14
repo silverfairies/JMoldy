@@ -25,12 +25,29 @@ class Execute {
 
     public static void build ( Project project ) {
         String name = project.getJarName() != null ? project.getJarName() : project.getName() + ".jar";
+        StringBuilder command = new StringBuilder();
         if ( project.getEntryPoint() != null )
-            TextEdit.execute(new String("jar cfe " + name + " " + project.getEntryPoint() + " -C ../out/ .").split(" "), project.getPath().resolve("jar").toFile());
+            command.append("jar cfe ")
+                .append(name + " ")
+                .append(project.getEntryPoint())
+                .append(" -C ")
+                .append(project.getPath()
+                    .resolve(project.getJarDirectory())
+                    .relativize(project.getPath().resolve(project.getOutDirectory()))
+                    .toString() + "/ .");
         else
-            TextEdit.execute(new String("jar cf " + name + " -C ../out/ .").split(" "), project.getPath().resolve("jar").toFile());
+            command.append("jar cf ")
+                .append(name)
+                .append(" -C ")
+                .append(project.getPath()
+                    .resolve(project.getJarDirectory())
+                    .relativize(project.getPath().resolve(project.getOutDirectory()))
+                    .toString() + "/ .");
+        
+        System.out.println(command);
+        TextEdit.execute(command.toString().split(" "), project.getPath().resolve(project.getJarDirectory()).toFile());
         try {
-            for ( File each : project.getPath().resolve("lib").toFile().listFiles() ) Files.copy(each.toPath(), project.getPath().resolve("jar").resolve("lib").resolve(each.getName()));
+            for ( File each : project.getPath().resolve(project.getLibDirectory()).toFile().listFiles() ) Files.copy(each.toPath(), project.getPath().resolve(project.getJarDirectory()).resolve("lib").resolve(each.getName()));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -39,7 +56,7 @@ class Execute {
     public static void compile ( Project project ) {
         StringBuilder command = new StringBuilder();
         command.append("javac ")
-            .append("-d out ")
+            .append("-d " + project.getPath().resolve(project.getOutDirectory()).toString() + " ")
             .append("-cp ");
             for ( File file : project.getExternalLibraries() ) command.append(file.toPath().normalize().toString() + ":");
             command.append("*");
