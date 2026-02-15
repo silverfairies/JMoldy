@@ -1,14 +1,11 @@
 package an.argentum.jmoldy;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.Arrays;
 
+import an.argentum.util.FileEdit;
 import an.argentum.util.TerminalReader;
 import an.argentum.util.TextEdit;
-import an.argentum.jmoldy.*;
 public class Terminal extends TerminalReader {
 
     private Project project;
@@ -25,7 +22,7 @@ public class Terminal extends TerminalReader {
                         switch (input[1]) {
                             case "out":
                             case "jar":
-                                Execute.delete(project.getPath(), input[1]);
+                                FileEdit.delete(project.getPath(), input[1]);
                                 break;
                             default:
                                 System.out.println("Specify out or jar directory as\nclear out|jar.");
@@ -49,7 +46,8 @@ public class Terminal extends TerminalReader {
                 break;
 
             case "build":
-                Execute.build(project);
+                if ( project.getJarDirectory() != null ) Execute.build(project);
+                else System.out.println("Target directory jar not specified.");
                 break;
 
             case "compile":
@@ -61,12 +59,20 @@ public class Terminal extends TerminalReader {
                     switch (input[1]) {
                         case "ep":
                         case "entry":
+                        case "entryPoint":
                             project.setEntryPoint(input[2]);
                             break;
                         
                         case "jn":
-                        case "jar":
+                        case "jarName":
                             project.setJarName(input[2]);
+                            break;
+
+                        case "src":
+                        case "out":
+                        case "jar":
+                        case "lib":
+                            project.setPaths(input[1], input[2]);
                             break;
 
                         default:

@@ -3,26 +3,10 @@ package an.argentum.jmoldy;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 import an.argentum.util.TextEdit;
 
 class Execute {
-
-    public static void delete ( Path path, String directory ) {
-        Path buffer = path.resolve(directory);
-        for ( File each : buffer.toFile().listFiles()) delete(each);
-    }
-
-    private static void delete ( File file ) {
-        if ( !file.isDirectory() || (file.isDirectory() && file.listFiles().length == 0) ) file.delete(); else {
-            for(File each : file.listFiles()) {
-                delete(each);
-            }
-            file.delete();
-        }
-    }
-
     public static void build ( Project project ) {
         String name = project.getJarName() != null ? project.getJarName() : project.getName() + ".jar";
         StringBuilder command = new StringBuilder();
@@ -64,5 +48,4 @@ class Execute {
         System.out.println(command);
         TextEdit.execute(command.toString().split(" "), null);
     }
-
 }

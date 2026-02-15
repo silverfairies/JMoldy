@@ -1,16 +1,20 @@
 package an.argentum.jmoldy;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.LinkedHashSet;
 
 class Project {
-
     
     private String name;
     private ArrayList<Library> packages;
+    private String version;
     private int ver;
     private Path path;
     private String entryPoint;
@@ -32,22 +36,51 @@ class Project {
 
     public Project ( Path path ) {
         this.path = path;
-        this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
-        // this.packages = new ArrayList<>();
+        if ( path.resolve(".moldy").toFile().exists() ) {
+            try {
+                HashMap<String, String> buffer = SaveReader.readFile(path.resolve(".moldy").toFile());
 
-        this.srcDirectory = new File("src").toPath();
-        this.libDirectory = new File("lib").toPath();
-        this.outDirectory = new File("out").toPath();
-        this.jarDirectory = new File("jar").toPath();
+                if (buffer.containsKey("name")) this.name = buffer.get("name"); else this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
+                if (buffer.containsKey("version")) this.entryPoint = buffer.get("version");
 
-        this.sourcePackages = getSourcePackages();
-        this.externalLibraries = getExternalLibraries();
-        this.sourceFiles = getSourceFiles();
+                if (buffer.containsKey("src")) this.srcDirectory = new File(buffer.get("src")).toPath(); else this.srcDirectory = new File("src").toPath();
+                if (buffer.containsKey("lib")) this.libDirectory = new File(buffer.get("lib")).toPath(); else this.libDirectory = new File("lib").toPath();
+                if (buffer.containsKey("out")) this.outDirectory = new File(buffer.get("out")).toPath(); else this.outDirectory = new File("out").toPath();
+                if (buffer.containsKey("jar")) this.jarDirectory = new File(buffer.get("jar")).toPath();
+
+                if (buffer.containsKey("jarName")) this.jarName = buffer.get("jarName");
+                if (buffer.containsKey("entryPoint")) this.entryPoint = buffer.get("entryPoint");
+
+                this.sourcePackages = getSourcePackages();
+                this.externalLibraries = getExternalLibraries();
+                this.sourceFiles = getSourceFiles();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
+            // this.packages = new ArrayList<>();
+
+            this.srcDirectory = new File("src").toPath();
+            this.libDirectory = new File("lib").toPath();
+            this.outDirectory = new File("out").toPath();
+
+            this.sourcePackages = getSourcePackages();
+            this.externalLibraries = getExternalLibraries();
+            this.sourceFiles = getSourceFiles();
+            
+            SaveWriter.save(this);
+        }
         System.out.println(name + " loaded.");
     }
 
     public String getName () {
         return this.name;
+    }
+
+    public String getVersion () {
+        return this.version;
     }
 
     public Path getPath () {
@@ -56,6 +89,7 @@ class Project {
 
     public void setEntryPoint ( String input ) {
         this.entryPoint = input;
+        SaveWriter.save(this);
     }
 
     public String getEntryPoint () {
@@ -64,6 +98,7 @@ class Project {
 
     public void setJarName ( String input ) {
         this.jarName = input;
+        SaveWriter.save(this);
     }
 
     public String getJarName () {
@@ -125,18 +160,22 @@ class Project {
         switch (directory) {
             case "src":
                 this.srcDirectory = new File(path).toPath();
+                SaveWriter.save(this);
                 break;
 
             case "lib":
                 this.libDirectory = new File(path).toPath();
+                SaveWriter.save(this);
                 break;
         
             case "out":
                 this.outDirectory = new File(path).toPath();
+                SaveWriter.save(this);
                 break;
         
             case "jar":
                 this.jarDirectory = new File(path).toPath();
+                SaveWriter.save(this);
                 break;
         
             default:
@@ -178,4 +217,6 @@ class Project {
                 throw new InputMismatchException(directory + " not a parameter");
         }
     }
+
+
 }
