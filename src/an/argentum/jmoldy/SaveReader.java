@@ -6,13 +6,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import an.argentum.util.Pair;
 import an.argentum.util.TextEdit;
 
 public class SaveReader {
     
     public static HashMap<String, String> readFile ( File file ) throws FileNotFoundException {
-        return map(getStrings(file));
+        return map(getStrings(file), ":");
     }
 
     private static String[] getStrings ( File file ) throws FileNotFoundException {
@@ -25,22 +24,12 @@ public class SaveReader {
         return output;
     }
 
-    private static HashMap<String, String> map ( String[] input ) {
+    private static HashMap<String, String> map ( String[] input, String regex ) {
         HashMap<String, String> output = new HashMap<>();
-        LinePair[] buffer = new LinePair[input.length];
         for ( int i = 0; i < input.length; i++ ) {
             System.out.println(input[i]);
-            buffer[i] = new LinePair(input[i], ":");
+            output.put(input[i].split(regex)[0], TextEdit.getFirstString(input[i].split(regex)[1]));
         }
-        for ( int i = 0; i < buffer.length; i++ ) output.put(buffer[i].getKey(), buffer[i].getValue());
         return output;
-    }
-
-    static class LinePair extends Pair<String, String> {
-
-        public LinePair ( String input, String regex ) {
-            super(input.split(regex)[0], TextEdit.getFirstString(input.split(regex)[1]));
-        }
-
     }
 }

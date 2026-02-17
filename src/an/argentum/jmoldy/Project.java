@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.InputMismatchException;
@@ -70,7 +69,7 @@ class Project {
             this.externalLibraries = getExternalLibraries();
             this.sourceFiles = getSourceFiles();
             
-            SaveWriter.save(this);
+            save();
         }
         System.out.println(name + " loaded.");
     }
@@ -89,7 +88,7 @@ class Project {
 
     public void setEntryPoint ( String input ) {
         this.entryPoint = input;
-        SaveWriter.save(this);
+        save();
     }
 
     public String getEntryPoint () {
@@ -98,7 +97,7 @@ class Project {
 
     public void setJarName ( String input ) {
         this.jarName = input;
-        SaveWriter.save(this);
+        save();
     }
 
     public String getJarName () {
@@ -160,22 +159,22 @@ class Project {
         switch (directory) {
             case "src":
                 this.srcDirectory = new File(path).toPath();
-                SaveWriter.save(this);
+                save();
                 break;
 
             case "lib":
                 this.libDirectory = new File(path).toPath();
-                SaveWriter.save(this);
+                save();
                 break;
         
             case "out":
                 this.outDirectory = new File(path).toPath();
-                SaveWriter.save(this);
+                save();
                 break;
         
             case "jar":
                 this.jarDirectory = new File(path).toPath();
-                SaveWriter.save(this);
+                save();
                 break;
         
             default:
@@ -218,5 +217,11 @@ class Project {
         }
     }
 
-
+    private void save () {
+        try {
+            SaveWriter.save(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
