@@ -31,7 +31,12 @@ class Execute {
         System.out.println(command);
         TextEdit.execute(command.toString().split(" "), project.getPath().resolve(project.getJarDirectory()).toFile());
         try {
-            for ( File each : project.getPath().resolve(project.getLibDirectory()).toFile().listFiles() ) Files.copy(each.toPath(), project.getPath().resolve(project.getJarDirectory()).resolve("lib").resolve(each.getName()));
+            if ( !project.getPath().resolve(project.getJarDirectory()).resolve("lib").toFile().exists() )
+                project.getPath().resolve(project.getJarDirectory()).resolve("lib").toFile().mkdir();
+            for ( File each : project.getPath().resolve(project.getLibDirectory()).toFile().listFiles() ) {
+                if ( !project.getPath().resolve(project.getJarDirectory()).resolve("lib").resolve(each.getName()).toFile().exists() )
+                    Files.copy( each.toPath(), project.getPath().resolve(project.getJarDirectory()).resolve("lib").resolve(each.getName()) );
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

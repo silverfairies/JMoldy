@@ -9,6 +9,9 @@ import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.LinkedHashSet;
 
+import an.argentum.util.SaveReader;
+import an.argentum.util.SaveWriter;
+
 class Project {
     
     private String name;
@@ -36,27 +39,7 @@ class Project {
     public Project ( Path path ) {
         this.path = path;
         if ( path.resolve(".moldy").toFile().exists() ) {
-            try {
-                HashMap<String, String> buffer = SaveReader.readFile(path.resolve(".moldy").toFile());
-
-                if (buffer.containsKey("name")) this.name = buffer.get("name"); else this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
-                if (buffer.containsKey("version")) this.entryPoint = buffer.get("version");
-
-                if (buffer.containsKey("src")) this.srcDirectory = new File(buffer.get("src")).toPath(); else this.srcDirectory = new File("src").toPath();
-                if (buffer.containsKey("lib")) this.libDirectory = new File(buffer.get("lib")).toPath(); else this.libDirectory = new File("lib").toPath();
-                if (buffer.containsKey("out")) this.outDirectory = new File(buffer.get("out")).toPath(); else this.outDirectory = new File("out").toPath();
-                if (buffer.containsKey("jar")) this.jarDirectory = new File(buffer.get("jar")).toPath();
-
-                if (buffer.containsKey("jarName")) this.jarName = buffer.get("jarName");
-                if (buffer.containsKey("entryPoint")) this.entryPoint = buffer.get("entryPoint");
-
-                this.sourcePackages = getSourcePackages();
-                this.externalLibraries = getExternalLibraries();
-                this.sourceFiles = getSourceFiles();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-
+            load();
         } else {
             this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
             // this.packages = new ArrayList<>();
@@ -64,13 +47,13 @@ class Project {
             this.srcDirectory = new File("src").toPath();
             this.libDirectory = new File("lib").toPath();
             this.outDirectory = new File("out").toPath();
-
-            this.sourcePackages = getSourcePackages();
-            this.externalLibraries = getExternalLibraries();
-            this.sourceFiles = getSourceFiles();
             
             save();
         }
+        this.sourcePackages = getSourcePackages();
+        this.externalLibraries = getExternalLibraries();
+        this.sourceFiles = getSourceFiles();
+
         System.out.println(name + " loaded.");
     }
 
@@ -219,8 +202,46 @@ class Project {
 
     private void save () {
         try {
-            SaveWriter.save(this);
+            SaveWriter.save( this.path.resolve(".moldy").toFile(), pack() );
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private HashMap<String, String> pack () {
+        HashMap<String, String> target = new HashMap<>();
+
+        target.put("name", this.getName());
+        if ( this.version != null ) target.put("version", this.version);
+
+        target.put("src", this.srcDirectory.toString());
+        target.put("lib", this.libDirectory.toString());
+        target.put("out", this.outDirectory.toString());
+        if ( this.jarDirectory != null ) target.put("jar", this.jarDirectory.toString());
+
+        if ( this.jarName != null ) target.put("jarName", this.jarName);
+        if ( this.entryPoint != null ) target.put("entryPoint", this.entryPoint);
+
+        return target;
+    }
+
+    private void load () {
+        try {
+            HashMap<String, String> buffer = SaveReader.readFile(this.path.resolve(".moldy").toFile());
+
+            if (buffer.containsKey("name")) this.name = buffer.get("name"); else this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
+            if (buffer.containsKey("version")) this.entryPoint = buffer.get("version");
+
+            if (buffer.containsKey("src")) this.srcDirectory = new File(buffer.get("src")).toPath(); else this.srcDirectory = new File("src").toPath();
+            if (buffer.containsKey("lib")) this.libDirectory = new File(buffer.get("lib")).toPath(); else this.libDirectory = new File("lib").toPath();
+            if (buffer.containsKey("out")) this.outDirectory = new File(buffer.get("out")).toPath(); else this.outDirectory = new File("out").toPath();
+            if (buffer.containsKey("jar")) this.jarDirectory = new File(buffer.get("jar")).toPath();
+
+            if (buffer.containsKey("jarName")) this.jarName = buffer.get("jarName");
+            if (buffer.containsKey("entryPoint")) this.entryPoint = buffer.get("entryPoint");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
