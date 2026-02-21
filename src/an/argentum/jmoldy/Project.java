@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.LinkedHashSet;
+import java.util.Scanner;
 
 import an.argentum.util.SaveReader;
 import an.argentum.util.SaveWriter;
@@ -16,6 +17,7 @@ class Project {
     
     private String name;
     private ArrayList<Library> packages;
+    private boolean library;
     private String version;
     private int ver;
     private Path path;
@@ -38,22 +40,21 @@ class Project {
 
     public Project ( Path path ) {
         this.path = path;
-        if ( path.resolve(".moldy").toFile().exists() ) {
-            load();
-        } else {
-            this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
-            // this.packages = new ArrayList<>();
-
-            this.srcDirectory = new File("src").toPath();
-            this.libDirectory = new File("lib").toPath();
-            this.outDirectory = new File("out").toPath();
-            
-            save();
-        }
+        this.load();
+        
+        /*
         this.sourcePackages = getSourcePackages();
         this.externalLibraries = getExternalLibraries();
         this.sourceFiles = getSourceFiles();
+        */
+        System.out.println(name + " loaded.");
+    }
 
+    public Project ( String name, Path path, Templates template) {
+        this.name = name;
+        this.path = path;
+        this.load(template.getMap());
+        this.save();
         System.out.println(name + " loaded.");
     }
 
@@ -71,7 +72,7 @@ class Project {
 
     public void setEntryPoint ( String input ) {
         this.entryPoint = input;
-        save();
+        this.save();
     }
 
     public String getEntryPoint () {
@@ -80,7 +81,7 @@ class Project {
 
     public void setJarName ( String input ) {
         this.jarName = input;
-        save();
+        this.save();
     }
 
     public String getJarName () {
@@ -142,22 +143,22 @@ class Project {
         switch (directory) {
             case "src":
                 this.srcDirectory = new File(path).toPath();
-                save();
+                this.save();
                 break;
 
             case "lib":
                 this.libDirectory = new File(path).toPath();
-                save();
+                this.save();
                 break;
         
             case "out":
                 this.outDirectory = new File(path).toPath();
-                save();
+                this.save();
                 break;
         
             case "jar":
                 this.jarDirectory = new File(path).toPath();
-                save();
+                this.save();
                 break;
         
             default:
@@ -214,9 +215,9 @@ class Project {
         target.put("name", this.getName());
         if ( this.version != null ) target.put("version", this.version);
 
-        target.put("src", this.srcDirectory.toString());
-        target.put("lib", this.libDirectory.toString());
-        target.put("out", this.outDirectory.toString());
+        if ( this.srcDirectory != null ) target.put("src", this.srcDirectory.toString());
+        if ( this.libDirectory != null ) target.put("lib", this.libDirectory.toString());
+        if ( this.outDirectory != null ) target.put("out", this.outDirectory.toString());
         if ( this.jarDirectory != null ) target.put("jar", this.jarDirectory.toString());
 
         if ( this.jarName != null ) target.put("jarName", this.jarName);
@@ -227,22 +228,24 @@ class Project {
 
     private void load () {
         try {
-            HashMap<String, String> buffer = SaveReader.readFile(this.path.resolve(".moldy").toFile());
-
-            if (buffer.containsKey("name")) this.name = buffer.get("name"); else this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
-            if (buffer.containsKey("version")) this.entryPoint = buffer.get("version");
-
-            if (buffer.containsKey("src")) this.srcDirectory = new File(buffer.get("src")).toPath(); else this.srcDirectory = new File("src").toPath();
-            if (buffer.containsKey("lib")) this.libDirectory = new File(buffer.get("lib")).toPath(); else this.libDirectory = new File("lib").toPath();
-            if (buffer.containsKey("out")) this.outDirectory = new File(buffer.get("out")).toPath(); else this.outDirectory = new File("out").toPath();
-            if (buffer.containsKey("jar")) this.jarDirectory = new File(buffer.get("jar")).toPath();
-
-            if (buffer.containsKey("jarName")) this.jarName = buffer.get("jarName");
-            if (buffer.containsKey("entryPoint")) this.entryPoint = buffer.get("entryPoint");
+            this.load ( SaveReader.readFile(this.path.resolve(".moldy").toFile()) );
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void load ( HashMap<String, String> contents ) {
+        if (contents.containsKey("name")) this.name = contents.get("name"); else this.name = this.path.toAbsolutePath().normalize().getFileName().toString();
+        if (contents.containsKey("version")) this.version = contents.get("version");
+
+        if (contents.containsKey("src")) this.srcDirectory = new File(contents.get("src")).toPath();
+        if (contents.containsKey("lib")) this.libDirectory = new File(contents.get("lib")).toPath();
+        if (contents.containsKey("out")) this.outDirectory = new File(contents.get("out")).toPath();
+        if (contents.containsKey("jar")) this.jarDirectory = new File(contents.get("jar")).toPath();
+
+        if (contents.containsKey("jarName")) this.jarName = contents.get("jarName");
+        if (contents.containsKey("entryPoint")) this.entryPoint = contents.get("entryPoint");
     }
 }

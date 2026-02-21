@@ -2,7 +2,6 @@ package an.argentum.jmoldy;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -27,12 +26,17 @@ public class Terminal extends TerminalReader {
             case "load":
                 if ( input.length > 1 ) {
                     switch (input[1]) {
-                        case "-here":
+                        /* case "-here":
                             this.project = new Project(FileSystems.getDefault().getPath("."));
                             break;
+                        */
                             
                         default:
-                            this.project = new Project(FileSystems.getDefault().getPath(input[1]));
+                            try {
+                                this.project = ProjectLoader.load(input[1]);
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
                             break;
                     }
                 } else System.out.println("Specify directory to load.");
@@ -45,7 +49,14 @@ public class Terminal extends TerminalReader {
             case "open":
                 if ( input.length > 1 ) {
                     Path projectPath = this.aliasList.get(input[1]);
-                    if ( projectPath != null ) this.project = new Project(projectPath); else System.out.println("No alias " + input[1] + " set.");
+                    if ( projectPath != null ){
+                        try {
+                            this.project = ProjectLoader.load(projectPath);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else System.out.println("No alias " + input[1] + " set.");
                 } else System.out.println("Specify an alias.");
                 return true;
 
@@ -56,7 +67,7 @@ public class Terminal extends TerminalReader {
                             if ( input.length > 2 ) {
                                 this.aliasList.create(new File(input[2]).toPath());
                             } else System.out.println("Specify a path.");
-                            break;
+                            return true;
 
                         case "list":
                             try {
@@ -66,13 +77,23 @@ public class Terminal extends TerminalReader {
                             } catch (FileNotFoundException e) {
                                 e.printStackTrace();
                             }
-                            break;
+                            return true;
                     
                         default:
                             if ( project == null ) System.out.println("Specify argument new|list.");
                     }
                 } else if ( project == null ) System.out.println("Specify argument new|list.");
                 if ( project == null ) return true; else break;
+
+            case "create":
+                if ( input.length > 3 ) {
+                    try {
+                        this.project = ProjectLoader.create(input[1], input[2], input[3]);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return true;
 
             case "execute":
                 if ( input.length > 1 ) {
